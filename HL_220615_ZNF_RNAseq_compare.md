@@ -81,89 +81,8 @@ Define functions for quantifications and visualizations
 
 Load RNA-seq count tables
 
-    mart = read.table("/storage/westbrook/home/heyuanl/genome_files/mart_transcript_ids.txt",
-        sep = "\t", header = T)
-    repeat_len = read.table("/storage/westbrook/genomes/hg38/annotation/GRCh38_GENCODE_rmsk_TE_genelen.bed",
-        header = T)
-    gene_len = read.table("/storage/westbrook/genomes/hg38/annotation/gencode_v36_annotation_genelen.bed",
-        header = T)
-
-    repeats_anno = read.table("/storage/westbrook/genomes/hg38/annotation/GRCh38_GENCODE_rmsk_TE.gtf",
-        header = F)[, c(10, 16, 19)]
-    colnames(repeats_anno) = c("gene_id", "family_id", "class_id")
-
-    repeats_anno = transform(repeats_anno[!duplicated(repeats_anno$gene_id),
-        ], row.names = 1)
-    repeats_anno$family_id[grep("UCON", repeats_anno$family_id)] = "UCON"
-
-    load("/storage/westbrook/projects/myc_hush/integrated_analysis/HL_220107_hg8_complete_results.RDS")
-    load("/storage/westbrook/projects/myc_hush/bcc_7713_rnaseq/ds_analysis/HL_220114_bcc_complete_results.RDS")
-    sample_sheet_bcc = read.table("/storage/westbrook/projects/myc_hush/bcc_7713_rnaseq/prelim/sample_sheet/HL_21010_prelim_full.txt")
-    nrf2_genelist = read.table("/storage/westbrook/home/heyuanl/hush/integrated_analysis/nrf2_wiki_2021_wp2884.txt")[[1]]
-    znf = read.csv("/storage/westbrook/projects/myc_hush/integrated_analysis/znf_analysis_210314/hg38_krab_znf_imbeult.csv")[[2]]
-
-    sample_sheet_znf = read.csv("/storage/westbrook/projects/myc_hush/public_data/GSE141802/SraRunTable_SRP235680.csv")[,
-        c("Run", "Cell_line", "genotype.variation")]
-    colnames(sample_sheet_znf)[1] = "sample_id"
-    sample_sheet_znf$genotype.variation = str_split(sample_sheet_znf$genotype.variation,
-        " ", simplify = T)[, 1]
-    sample_sheet_znf$group = sapply(sample_sheet_znf$genotype.variation,
-        function(x) {
-            if (x == "Empty") {
-                "Vector"
-            } else {
-                "ZNF"
-            }
-        })
-
-    cnt = Reduce(cbind, lapply(sample_sheet_znf$sample_id, function(sample_id) {
-        read.table(paste(paste("/storage/westbrook/projects/myc_hush/public_data/GSE141802/TEcount/",
-            sample_id, sep = ""), ".cntTable", sep = ""), header = T,
-            row.names = 1)
-    }))
-
 Load in-house RNA-seq data after gene m perturbation (analysed DESeq2
 output)
-
-    files = list.files("/storage/westbrook/home/heyuanl/hush/hg8_slamseq/grandslam/deseq_out/deseq_4contrasts/")[c(1:24,
-        33:40)]
-
-    load("/storage/westbrook/projects/myc_hush/integrated_analysis/HL_220107_hg8_complete_results.RDS")
-    load("/storage/westbrook/projects/myc_hush/bcc_7713_rnaseq/ds_analysis/HL_220114_bcc_complete_results.RDS")
-    sample_sheet_bcc = read.table("/storage/westbrook/projects/myc_hush/bcc_7713_rnaseq/prelim/sample_sheet/HL_21010_prelim_full.txt")
-    nrf2_genelist = read.table("/storage/westbrook/home/heyuanl/hush/integrated_analysis/nrf2_wiki_2021_wp2884.txt")[[1]]
-
-    names(deseq_results) = files
-    sig = Reduce(cbind, sapply(deseq_results, function(data) {
-        flag = data.frame(sig_flag = rep(0, nrow(annotations$gene_anno)),
-            row.names = rownames(annotations$gene_anno))
-        flag[match(data$Symbol[which(data$log2FoldChange > 0.4 &
-            data$padj < 0.05)], annotations$gene_anno$Symbol), 1] = 1
-        flag[match(data$Symbol[which(data$log2FoldChange < -0.4 &
-            data$padj < 0.05)], annotations$gene_anno$Symbol), 1] = -1
-        flag
-    }))
-
-    rownames(sig) = rownames(annotations$gene_anno)
-    colnames(sig) = files
-
-    all_gene_id = setdiff(intersect(rownames(annotations$gene_anno),
-        rownames(gene_anno)), na.omit(rownames(annotations$gene_anno)[match(nrf2_genelist,
-        annotations$gene_anno$Symbol)]))
-
-    sigflag_cb = as.matrix(cbind(sig[all_gene_id, c(25, 28, 29, 32)],
-        sigflag[all_gene_id, seq(2, 12, 2)]))
-
-    flag_up = rowMaxs(sigflag_cb[, -8]) > 0 & DESeq_results$res_uni_48h[all_gene_id,
-        1] > 25
-    flag_dn = rowMins(sigflag_cb[, -8]) < 0 & DESeq_results$res_uni_48h[all_gene_id,
-        1] > 25
-
-    m_up_id = all_gene_id[flag_up]
-    m_up_gene = annotations$gene_anno[m_up_id, "Symbol"]
-
-    m_dn_id = all_gene_id[flag_dn]
-    m_dn_gene = annotations$gene_anno[m_dn_id, "Symbol"]
 
 Formatting count tables and annotation tables for quantification
 
